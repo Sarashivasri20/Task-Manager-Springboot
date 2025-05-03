@@ -2,10 +2,13 @@ package com.example.Task_Manager_SpringBoot.controllers;
 
 import com.example.Task_Manager_SpringBoot.dto.CreateTaskDTO;
 import com.example.Task_Manager_SpringBoot.dto.ErrorResponseDTO;
+import com.example.Task_Manager_SpringBoot.dto.TaskResponseDTO;
 import com.example.Task_Manager_SpringBoot.dto.UpdateTaskDTO;
 import com.example.Task_Manager_SpringBoot.entities.TaskEntity;
+import com.example.Task_Manager_SpringBoot.services.NoteService;
 import com.example.Task_Manager_SpringBoot.services.TaskServices;
 import org.apache.coyote.Response;
+import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,8 +19,11 @@ import java.util.List;
 @RequestMapping("/tasks")
 public class TaskController {
     private final TaskServices taskService;
-    public TaskController(TaskServices taskService){
+    private final NoteService notesService;
+    private ModelMapper modelMapper =new ModelMapper();
+    public TaskController(TaskServices taskService, NoteService notesService){
         this.taskService=taskService;
+        this.notesService=notesService;
     }
 
     @GetMapping("")
@@ -27,12 +33,15 @@ public class TaskController {
 
     }
     @GetMapping("/{id}")
-    public ResponseEntity<TaskEntity> getTaskById(@PathVariable("id") Integer id){
+    public ResponseEntity<TaskResponseDTO> getTaskById(@PathVariable("id") Integer id){
         var task= taskService.getTaskById(id);
+        var notes=notesService.getNotesForTask(id);
         if(task==null){
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(task);
+        var taskResponse= modelMapper.map(task, TaskResponseDTO.class);
+        taskResponse.setNotes(notes);
+        return ResponseEntity.ok(taskResponse);
 
     }
 
